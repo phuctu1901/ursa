@@ -311,6 +311,7 @@ impl ProofVerifier {
         let c_hver = get_hash_as_int(&values)?;
 
         info!(target: "anoncreds_service", "Verifier verify proof -> done");
+        info!(target: "anoncreds_service", "Nguyen Phuc Tu edited");
 
         let valid = c_hver == proof.aggregated_proof.c_hash;
 

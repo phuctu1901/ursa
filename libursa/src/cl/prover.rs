@@ -24,6 +24,8 @@ impl Prover {
     /// let _master_secret = Prover::new_master_secret().unwrap();
     /// ```
     pub fn new_master_secret() -> UrsaCryptoResult<MasterSecret> {
+        info!(target: "anoncreds_service", "rbit_new_master_secret");
+
         Ok(MasterSecret {
             ms: bn_rand(LARGE_MASTER_SECRET)?,
         })
@@ -79,6 +81,8 @@ impl Prover {
         ),
         UrsaCryptoError,
     > {
+        info!(target: "anoncreds_service", "blind_credential_secrets");
+
         trace!(
             "Prover::blind_credential_secrets: >>> credential_pub_key: {:?}, \
              credential_key_correctness_proof: {:?}, \
@@ -235,6 +239,27 @@ impl Prover {
             witness
         );
 
+        info!(target: "anoncreds_service",
+         "Phuc Tu Edited: Prover::process_credential_signature: >>> credential_signature: {:?}, \
+             credential_values: {:?}, \
+             signature_correctness_proof: {:?}, \
+             credential_secrets_blinding_factors: {:?}, \
+             credential_pub_key: {:?}, \
+             nonce: {:?}, \
+             rev_key_pub: {:?}, \
+             rev_reg: {:?}, \
+             witness: {:?}",
+            credential_signature,
+            credential_values,
+            signature_correctness_proof,
+            credential_secrets_blinding_factors,
+            credential_pub_key,
+            nonce,
+            rev_key_pub,
+            rev_reg,
+            witness
+        );
+
         Prover::_process_primary_credential(
             &mut credential_signature.p_credential,
             &credential_secrets_blinding_factors.v_prime,
@@ -287,6 +312,8 @@ impl Prover {
     ///
     /// let _proof_builder = Prover::new_proof_builder();
     pub fn new_proof_builder() -> UrsaCryptoResult<ProofBuilder> {
+        info!(target: "anoncreds_service", "rbit_new_proof_builder");
+
         Ok(ProofBuilder {
             common_attributes: HashMap::new(),
             init_proofs: Vec::new(),
@@ -304,6 +331,7 @@ impl Prover {
     }
 
     fn _check_credential_key_correctness_proof(
+
         pr_pub_key: &CredentialPrimaryPublicKey,
         key_correctness_proof: &CredentialKeyCorrectnessProof,
     ) -> UrsaCryptoResult<()> {
@@ -409,6 +437,8 @@ impl Prover {
         let mut ctx = BigNumber::new_context()?;
         let v_prime = bn_rand(LARGE_VPRIME)?;
 
+        // info!(target: "ancre")
+        info!(target: "anoncreds_service", "rbit v_prime: {:?}", v_prime);
         //Hidden attributes are combined in this value
         let hidden_attributes = credential_values
             .attrs_values
@@ -468,7 +498,7 @@ impl Prover {
         };
 
         trace!("Prover::_generate_blinded_primary_credential_secrets_factors: <<< primary_blinded_cred_secrets: {:?}", primary_blinded_cred_secrets);
-
+        info!(target: "anoncreds_service","Prover::_generate_blinded_primary_credential_secrets_factors: <<< primary_blinded_cred_secrets: {:?}", primary_blinded_cred_secrets);
         Ok(primary_blinded_cred_secrets)
     }
 
@@ -479,6 +509,9 @@ impl Prover {
             "Prover::_generate_blinded_revocation_credential_secrets: >>> r_pub_key: {:?}",
             r_pub_key
         );
+
+        info!(target: "anoncreds_service","Prover::_generate_blinded_revocation_credential_secrets: >>> r_pub_key: {:?}",r_pub_key);
+
 
         let vr_prime = GroupOrderElement::new()?;
         let ur = r_pub_key.h2.mul(&vr_prime)?;
@@ -507,6 +540,17 @@ impl Prover {
             p_pub_key,
             credential_values
         );
+
+        // Đoạn này có chạy khi thực hiện tạo chứng chứ
+
+        info!(target: "anoncreds_service","Prover::_new_blinded_credential_secrets_correctness_proof: >>> p_pub_key: {:?}, \
+             blinded_primary_credential_secrets: {:?}, \
+             nonce: {:?}, \
+             credential_values: {:?}",
+            blinded_primary_credential_secrets,
+            nonce,
+            p_pub_key,
+            credential_values);
 
         let mut ctx = BigNumber::new_context()?;
 
@@ -1091,7 +1135,7 @@ impl ProofBuilder {
     /// ```
     pub fn finalize(&self, nonce: &Nonce) -> UrsaCryptoResult<Proof> {
         trace!("ProofBuilder::finalize: >>> nonce: {:?}", nonce);
-
+        info!(target: "anoncreds_service", "Ket thuc tai day");
         let mut values: Vec<Vec<u8>> = Vec::new();
         values.extend_from_slice(&self.tau_list);
         values.extend_from_slice(&self.c_list);
@@ -1271,6 +1315,9 @@ impl ProofBuilder {
             primary_init_proof
         );
 
+        info!(target: "anoncreds_service", "rbit_proof_builder");
+
+
         Ok(primary_init_proof)
     }
 
@@ -1336,11 +1383,25 @@ impl ProofBuilder {
 
         let mut ctx = BigNumber::new_context()?;
 
-        let m2_tilde = m2_t.unwrap_or(bn_rand(LARGE_MVECT)?);
 
-        let r = bn_rand(LARGE_VPRIME)?;
-        let e_tilde = bn_rand(LARGE_ETILDE)?;
-        let v_tilde = bn_rand(LARGE_VTILDE)?;
+        info!(target: "anoncreds_service", "Thuc hien random tai day Nhung thang nay dung de tinh a_prime");
+
+        // let m2_tilde = m2_t.unwrap_or(BigNumber::from_dec("7656242734452213990304870300805532620959168947718832211040348981651804760915882543996261781893563931629448039323314333387141396307923428405853175591477521061208202037522811937003")?);
+        let m2_tilde = BigNumber::from_dec("7656242734452213990304870300805532620959168947718832211040348981651804760915882543996261781893563931629448039323314333387141396307923428405853175591477521061208202037522811937003")?;
+
+        // let r = bn_rand(LARGE_VPRIME)?;
+        // let e_tilde = bn_rand(LARGE_ETILDE)?;
+        // let v_tilde = bn_rand(LARGE_VTILDE)?;
+        // let s = BigNumber::new_context()?;
+        // s.openssl_bn = r.openssl_bn;
+        // r= 7656242734452213990304870300805532620959168947718832211040348981651804760915882543996261781893563931629448039323314333387141396307923428405853175591477521061208202037522811937003;
+        // let mut m2_tilde = ;
+        let r = BigNumber::from_dec("11596997511268376871166588262534430501389599830350979051936261480474080549669916312632500631369517073914006429073700004311082175612731240671518726509916783443165648833877489860357045930809840685223413125699986730632259835393443092223859995090975177680661848546369944857348989807966713581062846862181886044699915857114610924869967457943609781997938725982436528855270038078800764183785547020795217822328188874663546490649658065557462904109867144192306798024177743601588033893203309416339246982632762275681360411494356558914536313321567108178662247844344824001711529879595410641247394640022628524722016901329593668018497517118888686351979733513")?;
+        let e_tilde = BigNumber::from_dec("121858216084155738937076555491399046927952015930788011210059820409240925730182820389595944044798713029049286236087495257884098942252144227")?;
+        let v_tilde = BigNumber::from_dec("99394531426294175904506267381883884360725581153068395605031013719628392112317230161936421115351392688306200962121639574908093449179849327839918434325718813011125885048751575793352063374602256316951470221035615684752580791382468975128184192000105630977861788873161297928624539460083047843084572142525970504142296318556033430403500137000259450931643015661769700649407909819147737586116033338437139140082451589346060400574971913568679850874204875949742620574392037758331027574258172561659742107797018003783248600484230292768025530889337698812413826351361304294607679231782146701686356235000841822399537447232798918277598393633755005055087286163789955792118514952518841754002321062898762809495881277673578103258722315209049853803848593695650565247793099839246300511939690865993563210121651593256325912402755298527818072504877770217002621677633009106047998896661602154007790396222541022833457247112188187060400641889945287648")?;
+
+        info!(target: "anoncreds_service", "Ket thuc random, cac gia tri la m2_tilde {:?},  r {:?}, e_tilde {:?}, v_tilde {:?}", m2_tilde, r, e_tilde, v_tilde);
+
 
         let unrevealed_attrs = non_cred_schema_elems
             .attrs
@@ -1358,6 +1419,8 @@ impl ProofBuilder {
             .s
             .mod_exp(&r, &cred_pub_key.n, Some(&mut ctx))?
             .mod_mul(&c1.a, &cred_pub_key.n, Some(&mut ctx))?;
+
+        info!(target: "anoncred_service", "gia tri cua a_prime la: {:?}", a_prime);
 
         let e_prime = c1.e.sub(&LARGE_E_START_VALUE)?;
 

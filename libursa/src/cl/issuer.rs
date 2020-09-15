@@ -9,6 +9,7 @@ use utils::commitment::get_pedersen_commitment;
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::iter::FromIterator;
+use amcl_wrapper::types::BigNum;
 
 /// Trust source that provides credentials to prover.
 pub struct Issuer {}
@@ -99,6 +100,8 @@ impl Issuer {
 
         trace!("Issuer::new_credential_def: <<< cred_pub_key: {:?}, cred_priv_key: {:?}, cred_key_correctness_proof: {:?}",
                cred_pub_key, secret!(&cred_priv_key), cred_key_correctness_proof);
+
+        info!("Nguyen Phuc Tu tested here");
 
         Ok((cred_pub_key, cred_priv_key, cred_key_correctness_proof))
     }
@@ -939,7 +942,7 @@ impl Issuer {
         let key_correctness_proof = CredentialKeyCorrectnessProof { c, xz_cap, xr_cap };
 
         trace!(
-            "Issuer::_new_credential_key_correctness_proof: <<< key_correctness_proof: {:?}",
+            "Issuer::_new_credential_key_correctness_proofs: <<< key_correctness_proof: {:?}",
             key_correctness_proof
         );
 
@@ -1159,12 +1162,17 @@ impl Issuer {
             e,
             v,
         };
+        info!("Nghich ngom source code===========");
+        // info!(pr_cred_sig.m_2);
+        info!("Nghich ngom source code============");
 
         trace!(
             "Issuer::_new_primary_credential: <<< pr_cred_sig: {:?}, q: {:?}",
             secret!(&pr_cred_sig),
             secret!(&q)
         );
+
+
 
         Ok((pr_cred_sig, q))
     }

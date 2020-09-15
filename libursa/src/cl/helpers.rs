@@ -75,6 +75,7 @@ pub fn _bn_rand(size: usize) -> UrsaCryptoResult<BigNumber> {
     let res = BigNumber::rand(size)?;
 
     trace!("Helpers::bn_rand: <<< res: {:?}", res);
+    // info!(target: "anoncreds_service", "Gia tri random v_tilde {:?}", res);
 
     Ok(res)
 }

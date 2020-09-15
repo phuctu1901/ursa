@@ -15,6 +15,7 @@ pub mod signatures;
 use errors::prelude::*;
 use ffi_support::ByteBuffer;
 use std::os::raw::c_char;
+use std::mem::transmute;
 
 /// Used for receiving a ByteBuffer from C that was allocated by either C or Rust.
 /// If Rust allocated, then the outgoing struct is ffi_support::ByteBuffer
@@ -55,8 +56,8 @@ impl ByteArray {
         }
     }
 
-    pub fn into_byte_buffer(self) -> ByteBuffer {
-        unsafe { std::mem::transmute(self) }
+    pub fn into_byte_buffer<>(self) -> ByteBuffer {
+        unsafe { transmute(self) }
     }
 }
 

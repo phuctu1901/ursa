@@ -630,6 +630,7 @@ pub struct PrimaryCredentialSignature {
 }
 
 impl PrimaryCredentialSignature {
+    // pub type UrsaCryptoResult<T> = Result<T, UrsaCryptoError>;
     pub fn try_clone(&self) -> UrsaCryptoResult<PrimaryCredentialSignature> {
         Ok(PrimaryCredentialSignature {
             m_2: self.m_2.try_clone()?,
