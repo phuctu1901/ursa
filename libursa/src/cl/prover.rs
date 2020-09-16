@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use std::iter::FromIterator;
 
+use sha2::{Sha256, Sha512, Digest};
 /// Credentials owner that can proof and partially disclose the credentials to verifier.
 pub struct Prover {}
 
@@ -315,6 +316,7 @@ impl Prover {
         info!(target: "anoncreds_service", "rbit_new_proof_builder");
 
         Ok(ProofBuilder {
+            proof_name: String::new(),
             common_attributes: HashMap::new(),
             init_proofs: Vec::new(),
             c_list: Vec::new(),
@@ -885,6 +887,7 @@ impl Prover {
 
 #[derive(Debug)]
 pub struct ProofBuilder {
+    proof_name: String,
     common_attributes: HashMap<String, BigNumber>,
     init_proofs: Vec<InitProof>,
     c_list: Vec<Vec<u8>>,
@@ -893,7 +896,15 @@ pub struct ProofBuilder {
 
 impl ProofBuilder {
     /// Creates m_tildes for attributes that will be the same across all subproofs
+    pub fn add_proof_name(&mut self, name: &str) -> UrsaCryptoResult<()> {
+        info!(target:"TuNgong", "Them ten vao ProofBuilder {:?}", name);
+        self.proof_name = name.to_string();
+        Ok(())
+    }
+
     pub fn add_common_attribute(&mut self, attr_name: &str) -> UrsaCryptoResult<()> {
+        info!(target:"TuNgong", "Gia tri dua vao ProofBuilder {:?}", self);
+
         self.common_attributes
             .insert(attr_name.to_owned(), bn_rand(LARGE_MVECT)?);
         Ok(())
@@ -1029,6 +1040,7 @@ impl ProofBuilder {
         }
 
         let primary_init_proof = ProofBuilder::_init_primary_proof(
+            &self.proof_name,
             &self.common_attributes,
             &credential_pub_key.p_key,
             &credential_signature.p_credential,
@@ -1055,7 +1067,7 @@ impl ProofBuilder {
         self.init_proofs.push(init_proof);
 
         trace!("ProofBuilder::add_sub_proof_request: <<<");
-
+        info!(target: "Tungong", "Ket thuc proof builder");
         Ok(())
     }
 
@@ -1156,6 +1168,7 @@ impl ProofBuilder {
             }
 
             let primary_proof = ProofBuilder::_finalize_primary_proof(
+                &self.proof_name,
                 &init_proof.primary_init_proof,
                 &challenge,
                 &init_proof.credential_schema,
@@ -1256,6 +1269,7 @@ impl ProofBuilder {
     }
 
     fn _init_primary_proof(
+        proof_name: &str,
         common_attributes: &HashMap<String, BigNumber>,
         issuer_pub_key: &CredentialPrimaryPublicKey,
         c1: &PrimaryCredentialSignature,
@@ -1266,7 +1280,8 @@ impl ProofBuilder {
         m2_t: Option<BigNumber>,
     ) -> UrsaCryptoResult<PrimaryInitProof> {
         trace!(
-            "ProofBuilder::_init_primary_proof: >>> common_attributes: {:?}, \
+            "ProofBuilder::_init_primary_proof: >>> proof_name: {:?} \
+            common_attributes: {:?}, \
              issuer_pub_key: {:?}, \
              c1: {:?}, \
              cred_values: {:?}, \
@@ -1274,6 +1289,7 @@ impl ProofBuilder {
              non_cred_schema_elems: {:?}, \
              sub_proof_request: {:?}, \
              m2_t: {:?}",
+            proof_name,
             common_attributes,
             issuer_pub_key,
             c1,
@@ -1284,7 +1300,10 @@ impl ProofBuilder {
             m2_t
         );
 
+        info!(target:"anoncreds_service", "Yeu cau bang chung sub_proof_request: {:?}", sub_proof_request);
+
         let eq_proof = ProofBuilder::_init_eq_proof(
+            proof_name,
             common_attributes,
             issuer_pub_key,
             c1,
@@ -1358,6 +1377,7 @@ impl ProofBuilder {
     }
 
     fn _init_eq_proof(
+        proof_name: &str,
         common_attributes: &HashMap<String, BigNumber>,
         cred_pub_key: &CredentialPrimaryPublicKey,
         c1: &PrimaryCredentialSignature,
@@ -1366,7 +1386,10 @@ impl ProofBuilder {
         sub_proof_request: &SubProofRequest,
         m2_t: Option<BigNumber>,
     ) -> UrsaCryptoResult<PrimaryEqualInitProof> {
-        trace!(
+
+
+        let mut ctx = BigNumber::new_context()?;
+        info!(target: "anoncreds_service",
             "ProofBuilder::_init_eq_proof: >>> cred_pub_key: {:?}, \
              c1: {:?}, \
              cred_schema: {:?}, \
@@ -1381,27 +1404,48 @@ impl ProofBuilder {
             m2_t
         );
 
-        let mut ctx = BigNumber::new_context()?;
+        info!(target: "anoncreds_service", "Thanh cong {:?}", proof_name);
 
-
-        info!(target: "anoncreds_service", "Thuc hien random tai day Nhung thang nay dung de tinh a_prime");
-
-        // let m2_tilde = m2_t.unwrap_or(BigNumber::from_dec("7656242734452213990304870300805532620959168947718832211040348981651804760915882543996261781893563931629448039323314333387141396307923428405853175591477521061208202037522811937003")?);
-        let m2_tilde = BigNumber::from_dec("7656242734452213990304870300805532620959168947718832211040348981651804760915882543996261781893563931629448039323314333387141396307923428405853175591477521061208202037522811937003")?;
+        let m2_tilde = m2_t.unwrap_or(bn_rand(LARGE_MVECT)?);
+        
+        // let m2_tilde = BigNumber::from_dec("7656242734452213990304870300805532620959168947718832211040348981651804760915882543996261781893563931629448039323314333387141396307923428405853175591477521061208202037522811937003")?;
 
         // let r = bn_rand(LARGE_VPRIME)?;
-        // let e_tilde = bn_rand(LARGE_ETILDE)?;
-        // let v_tilde = bn_rand(LARGE_VTILDE)?;
+        let e_tilde = bn_rand(LARGE_ETILDE)?;
+        let v_tilde = bn_rand(LARGE_VTILDE)?;
         // let s = BigNumber::new_context()?;
         // s.openssl_bn = r.openssl_bn;
         // r= 7656242734452213990304870300805532620959168947718832211040348981651804760915882543996261781893563931629448039323314333387141396307923428405853175591477521061208202037522811937003;
         // let mut m2_tilde = ;
-        let r = BigNumber::from_dec("11596997511268376871166588262534430501389599830350979051936261480474080549669916312632500631369517073914006429073700004311082175612731240671518726509916783443165648833877489860357045930809840685223413125699986730632259835393443092223859995090975177680661848546369944857348989807966713581062846862181886044699915857114610924869967457943609781997938725982436528855270038078800764183785547020795217822328188874663546490649658065557462904109867144192306798024177743601588033893203309416339246982632762275681360411494356558914536313321567108178662247844344824001711529879595410641247394640022628524722016901329593668018497517118888686351979733513")?;
-        let e_tilde = BigNumber::from_dec("121858216084155738937076555491399046927952015930788011210059820409240925730182820389595944044798713029049286236087495257884098942252144227")?;
-        let v_tilde = BigNumber::from_dec("99394531426294175904506267381883884360725581153068395605031013719628392112317230161936421115351392688306200962121639574908093449179849327839918434325718813011125885048751575793352063374602256316951470221035615684752580791382468975128184192000105630977861788873161297928624539460083047843084572142525970504142296318556033430403500137000259450931643015661769700649407909819147737586116033338437139140082451589346060400574971913568679850874204875949742620574392037758331027574258172561659742107797018003783248600484230292768025530889337698812413826351361304294607679231782146701686356235000841822399537447232798918277598393633755005055087286163789955792118514952518841754002321062898762809495881277673578103258722315209049853803848593695650565247793099839246300511939690865993563210121651593256325912402755298527818072504877770217002621677633009106047998896661602154007790396222541022833457247112188187060400641889945287648")?;
+        let input = proof_name;
 
-        info!(target: "anoncreds_service", "Ket thuc random, cac gia tri la m2_tilde {:?},  r {:?}, e_tilde {:?}, v_tilde {:?}", m2_tilde, r, e_tilde, v_tilde);
 
+
+        // ============================================================================
+        let mut hasher = Sha256::new();
+
+        hasher.input(input);
+
+        let result = hasher.result();
+
+        let string = format!("{:x}",result );
+
+
+
+        // ============================================================================
+      
+        let mut output = String::new();
+
+        for c in string.chars(){
+            if c.is_alphabetic() == true    {
+                let tmp = c.to_digit(36).unwrap();
+                output.push_str(&tmp.to_string());
+            } else{
+                output.push(c);
+            }
+        }
+
+        let r = BigNumber::from_dec(&output)?;
 
         let unrevealed_attrs = non_cred_schema_elems
             .attrs
@@ -1448,8 +1492,8 @@ impl ProofBuilder {
             m2: c1.m_2.try_clone()?,
         };
 
-        trace!(
-            "ProofBuilder::_init_eq_proof: <<< primary_equal_init_proof: {:?}",
+        info!(target:"anoncred_service", 
+            "Ket qua la ProofBuilder::_init_eq_proof: <<< primary_equal_init_proof: {:?}",
             primary_equal_init_proof
         );
 
@@ -1758,6 +1802,7 @@ impl ProofBuilder {
     }
 
     fn _finalize_primary_proof(
+        _proof_name: &str,
         init_proof: &PrimaryInitProof,
         challenge: &BigNumber,
         cred_schema: &CredentialSchema,
@@ -2152,6 +2197,7 @@ mod tests {
                 .unwrap();
 
         let init_eq_proof = ProofBuilder::_init_eq_proof(
+            "123",
             &common_attributes,
             &pk,
             &credential,
@@ -2201,6 +2247,7 @@ mod tests {
                 .unwrap();
 
         let init_proof = ProofBuilder::_init_primary_proof(
+            "123",
             &common_attributes,
             &pk,
             &credential.p_credential,
@@ -2262,6 +2309,7 @@ mod tests {
         let sub_proof_request = mocks::sub_proof_request();
 
         let proof = ProofBuilder::_finalize_primary_proof(
+            "123",
             &proof,
             &c_h,
             &credential_schema,

@@ -891,6 +891,11 @@ impl SubProofRequestBuilder {
         })
     }
 
+    // pub fn add_name(&mut self, proof_name: String) -> UrsaCryptoResult<()> {
+    //     self.value.proof_name = proof_name;
+    //     Ok(())
+    // }
+
     pub fn add_revealed_attr(&mut self, attr: &str) -> UrsaCryptoResult<()> {
         self.value.revealed_attrs.insert(attr.to_owned());
         Ok(())
